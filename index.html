@@ -141,8 +141,9 @@
         });
 
         document.getElementById('disconnectWallet').addEventListener('click', () => {
-            userAddress = "";
+            // Clear the signer and user address
             signer = null;
+            userAddress = "";
             document.getElementById('status').innerText = "Disconnected.";
             document.getElementById('disconnectWallet').disabled = true; // Disable disconnect button
             document.getElementById('connectWallet').disabled = false; // Enable connect button
